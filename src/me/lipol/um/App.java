@@ -16,7 +16,7 @@ public class App {
 
 	public static void main(String[] args) throws IOException {
 		
-		String fileName = "flare.data1";
+		String fileName = "flare.data2";
 		Data data = new Data(fileName);
 		DataSet dataSet = data.getDataSet();
 		System.out.println("** DATASET \"" + fileName + "\" INFORMATION **");

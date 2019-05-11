@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import me.lipol.um.entity.DataSet;
 import me.lipol.um.entity.Info;
@@ -50,11 +51,13 @@ public class Tree {
 		try {
 			   FileWriter fileWriter = new FileWriter("output.txt");
 			   PrintWriter printWriter = new PrintWriter(fileWriter);
+			   //printTree(root, pw);
 			   printTree(root, printWriter);
 			   printWriter.close();
 		 }catch(IOException e) {
 			   e.printStackTrace();
 		 }
+		
 		return root;
 	}
 	
@@ -88,22 +91,27 @@ public class Tree {
 				}
 			}
 			
-			if(sub.getSize() >= 1 && isAllSameClass(sub)) {
+			if(sub.isSameAttributes() || (sub.getSize() >= 1 && sub.isSameClass())) {
 				
 				Info info = new Info (v, maxEntry.getKey(), sub);
-				int value = Integer.parseInt(sub.getSamples().get(0)[App.CLASS]);
+				List<Integer> intList = new ArrayList<>();
+				
+				for(String[] s : sub.getSamples()) intList.add(Integer.valueOf(s[App.CLASS]));
+				
+				int value = mostCommon(intList);
 				info.setValue(value);
 				node.addChild(new Node<Info>(info));
+				break;
 				
-			}if (sub.getSize() >=1 && !isAllSameClass(sub) && maxEntry != null )  {
+				
+			}else if ((sub.getSize() >=1 && !sub.isSameClass() && maxEntry != null) ) {
 
 				Info info = new Info (v, maxEntry.getKey(), sub);
-//				double value = 0;
-//				for(String[] sample: sub.getSamples()) {
-//					value += Double.parseDouble(sample[App.CLASS]);
-//				}
-//				value = value/(double)sub.getSize();
-				int value = Integer.parseInt(sub.getSamples().get(0)[App.CLASS]);
+				List<Integer> intList = new ArrayList<>();
+				
+				for(String[] s : sub.getSamples()) intList.add(Integer.valueOf(s[App.CLASS]));
+				
+				int value = mostCommon(intList);
 				info.setValue(value);
 				recursionBuild(node.addChild(new Node<Info>(info)));
 			}
@@ -111,16 +119,6 @@ public class Tree {
 		}
 	return node.getRoot();
 }
-	
-	// checks if all samples from dataset are of the same class
-	private boolean isAllSameClass(DataSet sub) {
-		boolean allEqual = true;
-		for (String[] s : sub.getSamples()) {
-		    if(!s[App.CLASS].equals(sub.getSamples().get(0)[App.CLASS]))
-		        allEqual = false;
-		}
-		return allEqual;
-	}
 
 	// checks whether the attribute has already occurred with parents
 	private boolean isRepeat(int key, Node<Info> node) {
@@ -133,14 +131,20 @@ public class Tree {
 
 	private static void printTree(Node<Info> node, PrintWriter printWriter) {
 		
-		String a = String.join("", Collections.nCopies(node.getLevel(),"-"));
-		if(node.getLevel() == 1) printWriter.println("-------------------------------------------");
-		
-		printWriter.println(a + "(" + node.getData().getBranch() + ")" + node.getData().getAttribute());
-		
-		if(node.getData().getValue() != -1 && node.getChildren().isEmpty()) {
-			printWriter.println("Value: " + (int)node.getData().getValue());
+		if(node.getLevel()==1) printWriter.println("|----------------------------------");
+		String a = new String();
+		if(node.getLevel()>1) {
+			a = String.join("", Collections.nCopies(node.getLevel()-1,"|  "));
 		}
+		
+		if(node.getParent() != null) {
+			if(node.getData().getValue() != -1 && node.getChildren().isEmpty()) {
+				printWriter.println(a + "[" + node.getParent().getData().getAttribute() + "]=" + node.getData().getBranch() + " ---> VAL=" + (int)node.getData().getValue());
+			}else {
+				printWriter.println(a + "[" + node.getParent().getData().getAttribute() + "]=" + node.getData().getBranch());
+			}
+		}
+
 		node.getChildren().forEach(each ->  printTree(each, printWriter));
    
 	}
@@ -264,4 +268,21 @@ public class Tree {
 	    return bd.doubleValue();
 	}
 	
+	public static <T> T mostCommon(List<T> list) {
+	    Map<T, Integer> map = new HashMap<>();
+
+	    for (T t : list) {
+	        Integer val = map.get(t);
+	        map.put(t, val == null ? 1 : val + 1);
+	    }
+
+	    Entry<T, Integer> max = null;
+
+	    for (Entry<T, Integer> e : map.entrySet()) {
+	        if (max == null || e.getValue() > max.getValue())
+	            max = e;
+	    }
+
+	    return max.getKey();
+	}
 }
